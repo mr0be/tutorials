@@ -2,6 +2,7 @@ from odoo import api, fields, models
 from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools.float_utils import *
 
 class Estateproperty(models.Model):
     _name = "estate.property"
@@ -39,6 +40,15 @@ class Estateproperty(models.Model):
          'an offer price must be strictly positive'),
         ('estate_property_check_unique_name', 'unique(name)', 'a property tag name and property type name must be unique')
     ]
+
+    @api.constrains('expected_price','selling_price')
+    def _check_selling_price(self):
+        for record in self:
+            if (not float_is_zero(record.selling_price, precision_digits=1)) and record.selling_price < record.expected_price:
+                percent = int(record.selling_price / record.expected_price * 100)
+                if(percent < 90):
+                    raise ValidationError("selling price cannot be lower than 90 of the expected price.")
+
 
 
     @api.depends('living_area','garden_area')

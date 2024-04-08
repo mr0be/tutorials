@@ -38,7 +38,6 @@ class EstatepropertyOffer(models.Model):
                 record.date_deadline =  record.create_date + timedelta(days=record.validity)
             else:
                 record.date_deadline =  date.today() + timedelta(days=record.validity)
-
     
      
     def action_refuse(self):
