@@ -5,6 +5,7 @@ from odoo.exceptions import UserError, ValidationError
 class EstatepropertyOffer(models.Model):
     _name = "estate.property.offer"
     _description = "Estateproperty Tag Model"
+    _order = "price desc"
 
     price = fields.Float('Price', required=True)
     status = fields.Selection([('accepted', 'Accepted'), ('refused', 'Refused')],
@@ -20,6 +21,16 @@ class EstatepropertyOffer(models.Model):
          'an offer price must be strictly positive')
     ]
 
+
+    @api.model
+    def create(self, vals):
+        property = self.env['estate.property'].browse(vals['property_id'])
+       
+        if vals['price'] < property.best_price:
+            raise ValidationError(" offer with a lower amount than an existing offer.")
+        
+        property.state = 'offer_received'
+        return super().create(vals)
 
     @api.depends('create_date','validity')
     def _inverse_deadline(self):
@@ -38,8 +49,8 @@ class EstatepropertyOffer(models.Model):
                 record.date_deadline =  record.create_date + timedelta(days=record.validity)
             else:
                 record.date_deadline =  date.today() + timedelta(days=record.validity)
-    
-     
+
+
     def action_refuse(self):
         for record in self:
             record.status = 'refused'

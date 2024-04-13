@@ -7,6 +7,7 @@ from odoo.tools.float_utils import *
 class Estateproperty(models.Model):
     _name = "estate.property"
     _description = "Estateproperty Model"
+    _order = "id desc"
 
     name = fields.Char('Title',required=True)
     description = fields.Text('Description')
@@ -28,7 +29,7 @@ class Estateproperty(models.Model):
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
     partner_id = fields.Many2one('res.partner', string='Buyer',copy=False)
     tag_ids = fields.Many2many("estate.property.tag", string="Tags")
-    offer_ids = fields.Many2many('estate.property.offer', string='Offers')
+    offer_ids = fields.Many2many('estate.property.offer', string='Offers', readonly=True)
     
     total_area = fields.Integer('Total Area', required=False, readonly=True,copy=False,compute="_compute_area_total")
     best_price = fields.Float('Best Offer', required=False, readonly=True, copy=False, compute="_compute_best_price")
@@ -74,6 +75,13 @@ class Estateproperty(models.Model):
             self.garden_orientation = ''
             self.garden_area = 0
 
+    
+    @api.ondelete(at_uninstall=False)
+    def _unlink_prevent_unlink(self):
+        for record in self:
+            if any(not (record.state == 'new' or record.state == 'canceled') for user in self):
+                raise UserError("only new or canceled be delete")
+    
 
     def action_sold(self):
         for record in self:
